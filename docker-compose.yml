@@ -1,0 +1,38 @@
+services:
+  web:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    container_name: aspnet_dev
+    working_dir: /src/app
+    volumes:
+      - ./app/SOM2_2:/src/app   # katalog projektu
+    ports:
+      - "8080:80"
+    command: >
+      bash -c "dotnet restore &&
+               dotnet watch run --urls http://0.0.0.0:80"
+  db:
+      image: postgres:18
+      container_name: pg_db
+      restart: always
+      environment:
+        POSTGRES_USER: som
+        POSTGRES_PASSWORD: som
+        POSTGRES_DB: som2
+      volumes:
+      - ./volumes/postgres_data:/var/lib/postgresql
+      ports:
+        - "5432:5432"
+
+  pgadmin:
+      image: dpage/pgadmin4:7
+      container_name: pgadmin
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@example.com
+        PGADMIN_DEFAULT_PASSWORD: admin
+      ports:
+        - "5050:80"
+      depends_on:
+        - db
+      volumes:
+        - ./volumes/pgadmin_data:/var/lib/pgadmin
+#do ansible dodać network któ©y będzie bridge żeby móc wysyłąć dane do hostów
