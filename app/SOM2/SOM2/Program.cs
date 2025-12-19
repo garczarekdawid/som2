@@ -1,3 +1,9 @@
+using Microsoft.EntityFrameworkCore;
+using SOM2.Application.Interfaces;
+using SOM2.Application.Services;
+using SOM2.Domain.Interfaces;
+using SOM2.Infrastructure.Persistence;
+
 namespace SOM2
 {
     public class Program
@@ -6,8 +12,14 @@ namespace SOM2
         {
             var builder = WebApplication.CreateBuilder(args);
 
+
+            builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+
+            builder.Services.AddScoped<IManagedHostRepository, ManagedHostRepository>();
+            builder.Services.AddScoped<IManagedHostService, ManagedHostService>();
 
             var app = builder.Build();
 
