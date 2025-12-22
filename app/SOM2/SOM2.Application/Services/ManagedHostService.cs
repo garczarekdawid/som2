@@ -1,4 +1,5 @@
-﻿using SOM2.Application.DTO;
+﻿using SOM2.Application.Common;
+using SOM2.Application.DTO;
 using SOM2.Application.Interfaces;
 using SOM2.Domain.Entities;
 using SOM2.Domain.Interfaces;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace SOM2.Application.Services
 {
@@ -85,5 +87,22 @@ namespace SOM2.Application.Services
                 Description = host.Description
             };
         }
+
+        public async Task<(IEnumerable<ManagedHostDto> Hosts, int TotalCount)> GetPagedAsync(PaginationParams pagination, ManagedHostFilter? filter = null)
+        {
+            var (hosts, totalCount) = await _repo.GetPagedAsync(pagination.Page, pagination.PageSize, filter?.Search);
+
+            var dtoList = hosts.Select(h => new ManagedHostDto
+            {
+                Id = h.Id,
+                Name = h.Name,
+                IpAddress = h.IpAddress,
+                MacAddress = h.MacAddress,
+                Description = h.Description
+            });
+
+            return (dtoList, totalCount);
+        }
+
     }
 }

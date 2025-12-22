@@ -1,4 +1,5 @@
-﻿using SOM2.Application.DTO;
+﻿using SOM2.Application.Common;
+using SOM2.Application.DTO;
 using SOM2.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -16,5 +17,8 @@ namespace SOM2.Application.Interfaces
         Task UpdateAsync(ManagedHostUpdateDto host);
 
         Task<ManagedHostUpdateDto?> GetByIdAsync(Guid id);
+
+        Task<(IEnumerable<ManagedHostDto> Hosts, int TotalCount)> GetPagedAsync(PaginationParams pagination, ManagedHostFilter? filter = null);
+
     }
 }

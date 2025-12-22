@@ -14,5 +14,7 @@ namespace SOM2.Domain.Interfaces
         Task AddAsync(ManagedHost host);
         Task UpdateAsync(ManagedHost host);
         Task DeleteAsync(ManagedHost host);
+
+        Task<(List<ManagedHost> Hosts, int TotalCount)> GetPagedAsync(int page, int pageSize, string? search);
     }
 }

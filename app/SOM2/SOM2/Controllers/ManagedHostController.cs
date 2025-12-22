@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SOM2.Application.Common;
 using SOM2.Application.DTO;
 using SOM2.Application.Interfaces;
 using SOM2.Web.Models;
@@ -16,21 +17,34 @@ namespace SOM2.Web.Controllers
         }
 
         // Index – lista hostów
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, string? search = null, int pageSize = 10)
         {
-            var hostsDto = await _service.GetAllAsync();
-
-            // Konwersja DTO do ViewModel
-            var model = hostsDto.Select(h => new ManagedHostIndexViewModel
+            // Tworzymy parametry paginacji z dynamiczną ilością wpisów
+            var pagination = new PaginationParams
             {
-                Id = h.Id,
-                Name = h.Name,
-                IpAddress = h.IpAddress,
-                MacAddress = h.MacAddress,
-                Description = h.Description
-            }).ToList();
+                Page = page,
+                PageSize = pageSize
+            };
 
-            return View(model);
+            var filter = new ManagedHostFilter
+            {
+                Search = search
+            };
+
+            // Pobranie danych z serwisu
+            var (hosts, totalCount) = await _service.GetPagedAsync(pagination, filter);
+
+            // Przygotowanie ViewModel
+            var vm = new ManagedHostIndexViewModel
+            {
+                Hosts = hosts,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pagination.PageSize),
+                PageSize = pagination.PageSize,
+                Search = search
+            };
+
+            return View(vm);
         }
 
         // GET: Create
