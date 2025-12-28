@@ -16,6 +16,7 @@ namespace SOM2.Application.DTO
         public string IpAddress { get; set; }
         public string MacAddress { get; set; }
         public string? Description { get; set; }
+        public bool LegacySshSupported { get; set; }
     }
 
     public static class ManagedHostCreateDtoExtensions
@@ -28,7 +29,8 @@ namespace SOM2.Application.DTO
                 dto.SshPassword ?? "",
                 dto.IpAddress ?? "",
                 dto.MacAddress ?? "",
-                dto.Description ?? ""
+                dto.Description ?? "",
+                dto.LegacySshSupported
             );
         }
     }
@@ -41,6 +43,8 @@ namespace SOM2.Application.DTO
         public string IpAddress { get; set; }
         public string MacAddress { get; set; }
         public string Description { get; set; }
+
+        public bool LegacySshSupported { get; set; }
     }
 
     public class ManagedHostUpdateDto
@@ -52,6 +56,8 @@ namespace SOM2.Application.DTO
         public string IpAddress { get; set; }
         public string MacAddress { get; set; }
         public string? Description { get; set; }
+
+        public bool LegacySshSupported { get; set; }
     }
 
 
@@ -66,7 +72,8 @@ namespace SOM2.Application.DTO
                 dto.SshPassword ?? "",
                 dto.IpAddress ?? "",
                 dto.MacAddress ?? "",
-                dto.Description ?? ""
+                dto.Description ?? "",
+                dto.LegacySshSupported
             );
         }
     }

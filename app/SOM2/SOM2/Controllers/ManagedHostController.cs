@@ -69,7 +69,8 @@ namespace SOM2.Web.Controllers
                 SshPassword = vm.SshPassword,
                 IpAddress = vm.IpAddress,
                 MacAddress = vm.MacAddress,
-                Description = vm.Description
+                Description = vm.Description,
+                LegacySshSupported = vm.LegacySshSupported
             };
 
             await _service.AddAsync(dto);
@@ -91,7 +92,8 @@ namespace SOM2.Web.Controllers
                 SshPassword = dto.SshPassword,
                 IpAddress = dto.IpAddress,
                 MacAddress = dto.MacAddress,
-                Description = dto.Description
+                Description = dto.Description,
+                LegacySshSupported = dto.LegacySshSupported
             };
 
             return View(vm);
@@ -113,7 +115,8 @@ namespace SOM2.Web.Controllers
                 SshPassword = vm.SshPassword,
                 IpAddress = vm.IpAddress,
                 MacAddress = vm.MacAddress,
-                Description = vm.Description
+                Description = vm.Description,
+                LegacySshSupported = vm.LegacySshSupported
             };
 
             await _service.UpdateAsync(dto);

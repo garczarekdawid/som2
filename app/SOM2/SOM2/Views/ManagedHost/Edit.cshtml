@@ -1,58 +1,67 @@
 ﻿@model SOM2.Web.Models.ManagedHost.ManagedHostEditViewModel
 
 @{
-    ViewData["Title"] = "Edit Host";
+    ViewData["Title"] = "Edytuj hosta";
 }
 
-<h1>Edit Host</h1>
+<h1>Edytuj hosta</h1>
 
-<form asp-action="Edit" method="post">
+<form asp-action="Edit" method="post" class="mt-4">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
 
-    <div class="form-group">
-        <label asp-for="Name"></label>
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name" class="form-control" />
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="SshUser"></label>
+    <div class="mb-3">
+        <label asp-for="SshUser" class="form-label"></label>
         <input asp-for="SshUser" class="form-control" />
         <span asp-validation-for="SshUser" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="SshPassword"></label>
+    <div class="mb-3">
+        <label asp-for="SshPassword" class="form-label"></label>
         <input asp-for="SshPassword" type="password" class="form-control" />
         <span asp-validation-for="SshPassword" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="IpAddress"></label>
+    <div class="mb-3">
+        <label asp-for="IpAddress" class="form-label"></label>
         <input asp-for="IpAddress" class="form-control" />
         <span asp-validation-for="IpAddress" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="MacAddress"></label>
+    <div class="mb-3">
+        <label asp-for="MacAddress" class="form-label"></label>
         <input asp-for="MacAddress" class="form-control" />
         <span asp-validation-for="MacAddress" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Description"></label>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
         <input asp-for="Description" class="form-control" />
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Save</button>
-</form>
+    <div class="form-check mb-4">
+        <input asp-for="LegacySshSupported" class="form-check-input" type="checkbox" id="LegacySshSupported" />
+        <label class="form-check-label" for="LegacySshSupported">
+            Wsparcie dla starych metod SSH
+        </label>
+    </div>
 
-<a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+        <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+    </div>
+</form>
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
 }

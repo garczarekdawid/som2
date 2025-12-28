@@ -1,15 +1,16 @@
 ﻿@model SOM2.Web.Models.ManagedHost.ManagedHostIndexViewModel
 
-<h1>Managed Hosts</h1>
+<h1>Hosty Zarządzane</h1>
 
 <table class="table table-striped table-hover">
     <thead>
         <tr>
-            <th>Name</th>
-            <th>IP Address</th>
-            <th>MAC Address</th>
-            <th>Description</th>
-            <th>Actions</th>
+            <th>Nazwa</th>
+            <th>Adres IP</th>
+            <th>Adres MAC</th>
+            <th>Opis</th>
+            <th>Wsparcie SSH (stare)</th>
+            <th>Akcje</th>
         </tr>
     </thead>
     <tbody>
@@ -20,14 +21,15 @@
                 <td>@host.IpAddress</td>
                 <td>@host.MacAddress</td>
                 <td>@host.Description</td>
+                <td>@(host.LegacySshSupported ? "Tak" : "Nie")</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@host.Id" class="btn btn-sm btn-primary">Edit</a>
+                    <a asp-action="Edit" asp-route-id="@host.Id" class="btn btn-sm btn-primary">Edytuj</a>
                     <button type="button" class="btn btn-sm btn-danger"
                             data-bs-toggle="modal"
                             data-bs-target="#deleteModal"
                             data-host-id="@host.Id"
                             data-host-name="@host.Name">
-                        Delete
+                        Usuń
                     </button>
                 </td>
             </tr>
@@ -35,13 +37,13 @@
     </tbody>
 </table>
 
-<a asp-action="Create" class="btn btn-success mb-3">Add New Host</a>
+<a asp-action="Create" class="btn btn-success mb-3">Dodaj nowy host</a>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
 
     <!-- Lewy: PageSize -->
     <form method="get" class="d-flex align-items-center mb-0">
-        <label for="pageSize" class="me-2 mb-0">Show:</label>
+        <label for="pageSize" class="me-2 mb-0">Pokaż:</label>
         @Html.DropDownListFor(
         m => m.PageSize,
                 new SelectList(Model.PageSizes, Model.PageSize),
@@ -51,7 +53,7 @@
     </form>
 
     <!-- Środek: numery stron -->
-    <nav aria-label="Page navigation" class="mb-0">
+    <nav aria-label="Nawigacja stron" class="mb-0">
         <ul class="pagination mb-0">
             <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
                 <a class="page-link" asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)" asp-route-pageSize="@Model.PageSize">&laquo;</a>
@@ -95,25 +97,25 @@
 
     <!-- Prawy: Go to page -->
     <form method="get" class="d-flex align-items-center mb-0">
-        <label for="gotoPage" class="me-2 mb-0">Go to page:</label>
+        <label for="gotoPage" class="me-2 mb-0">Idź do strony:</label>
         <input type="number" min="1" max="@Model.TotalPages" name="page" id="gotoPage" class="form-control me-2" style="width:80px;" value="@Model.CurrentPage" />
         <input type="hidden" name="pageSize" value="@Model.PageSize" />
-        <button type="submit" class="btn btn-primary btn-sm">Go</button>
+        <button type="submit" class="btn btn-primary btn-sm">Idź</button>
     </form>
 
 </div>
 
-<!-- Modal Delete -->
+<!-- Modal Usuń -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="deleteForm" method="post" asp-action="DeleteConfirmed">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="deleteModalLabel">Potwierdź usunięcie</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
                 </div>
                 <div class="modal-body">
-                    Czy na pewno chcesz usunąć <strong id="hostName"></strong>?
+                    Czy na pewno chcesz usunąć hosta <strong id="hostName"></strong>?
                 </div>
                 <div class="modal-footer">
                     <input type="hidden" name="id" id="hostId" value="" />

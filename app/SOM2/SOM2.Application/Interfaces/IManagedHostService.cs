@@ -20,5 +20,7 @@ namespace SOM2.Application.Interfaces
 
         Task<(IEnumerable<ManagedHostDto> Hosts, int TotalCount)> GetPagedAsync(PaginationParams pagination, ManagedHostFilter? filter = null);
 
+        Task<List<ManagedHostUpdateDto>> GetByIdsAsync(List<Guid> ids);
+
     }
 }

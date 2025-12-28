@@ -45,6 +45,7 @@ namespace SOM2.Application.Services
         {
             // Konwersja DTO -> encja domenowa
             var host = dto.ToEntity();
+            host.SetLegacySshSupported(dto.LegacySshSupported);
             await _repo.AddAsync(host);
         }
 
@@ -67,6 +68,7 @@ namespace SOM2.Application.Services
             host.SetIpAddress(dto.IpAddress ?? host.IpAddress);
             host.SetMacAddress(dto.MacAddress ?? host.MacAddress);
             host.SetDescription(dto.Description ?? host.Description);
+            host.SetLegacySshSupported(dto.LegacySshSupported);
 
             await _repo.UpdateAsync(host);
         }
@@ -84,7 +86,8 @@ namespace SOM2.Application.Services
                 SshPassword = host.SshPassword,
                 IpAddress = host.IpAddress,
                 MacAddress = host.MacAddress,
-                Description = host.Description
+                Description = host.Description,
+                LegacySshSupported = host.LegacySshSupported
             };
         }
 
@@ -98,11 +101,25 @@ namespace SOM2.Application.Services
                 Name = h.Name,
                 IpAddress = h.IpAddress,
                 MacAddress = h.MacAddress,
-                Description = h.Description
+                Description = h.Description,
+                LegacySshSupported = h.LegacySshSupported
             });
 
             return (dtoList, totalCount);
         }
 
+        public async Task<List<ManagedHostUpdateDto>> GetByIdsAsync(List<Guid> ids)
+        {
+            var list = new List<ManagedHostUpdateDto>();
+
+            foreach (var id in ids)
+            {
+                var host = await GetByIdAsync(id);
+                if (host != null)
+                    list.Add(host);
+            }
+
+            return list;
+        }
     }
 }

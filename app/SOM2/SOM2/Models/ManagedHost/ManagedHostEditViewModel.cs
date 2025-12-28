@@ -24,5 +24,7 @@ namespace SOM2.Web.Models.ManagedHost
         [RegularExpression(@"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")]
         public string MacAddress { get; set; }
         public string? Description { get; set; }
+
+        public bool LegacySshSupported { get; set; }
     }
 }

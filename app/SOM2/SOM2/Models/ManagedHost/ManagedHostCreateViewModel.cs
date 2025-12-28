@@ -25,6 +25,8 @@ namespace SOM2.Web.Models.ManagedHost
         public string MacAddress { get; set; }
 
         public string? Description { get; set; }
+
+        public bool LegacySshSupported { get; set; }
     }
 }
 

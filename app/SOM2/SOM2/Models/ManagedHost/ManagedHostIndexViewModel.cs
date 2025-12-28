@@ -9,6 +9,7 @@ namespace SOM2.Web.Models.ManagedHost
         public string IpAddress { get; set; }
         public string MacAddress { get; set; }
         public string? Description { get; set; }
+        public bool LegacySshSupported { get; set; }
 
         public IEnumerable<ManagedHostDto> Hosts { get; set; } = new List<ManagedHostDto>();
 

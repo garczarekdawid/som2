@@ -16,6 +16,7 @@ namespace SOM2.Domain.Entities
         public string MacAddress { get; private set; }
         public HostStatus Status { get; private set; }
         public string? Description { get; private set; }
+        public bool LegacySshSupported { get; private set; } = false;
 
         public void SetStatus(HostStatus status)
         {
@@ -29,7 +30,9 @@ namespace SOM2.Domain.Entities
         public void SetMacAddress(string mac) => MacAddress = mac;
         public void SetDescription(string description) => Description = description;
 
-        public ManagedHost(string name, string sshUser, string sshPassword, string ipAddress, string macAddress, string description = "")
+        public void SetLegacySshSupported(bool value) => LegacySshSupported = value;
+
+        public ManagedHost(string name, string sshUser, string sshPassword, string ipAddress, string macAddress, string description = "", bool legacySshSupported = false)
         {
             Id = Guid.NewGuid();
             Name = name;
@@ -39,9 +42,10 @@ namespace SOM2.Domain.Entities
             MacAddress = macAddress;
             Description = description;
             Status = HostStatus.Unknown;
+            LegacySshSupported = legacySshSupported;
         }
 
-        public ManagedHost(Guid id, string name, string sshUser, string sshPassword, string ipAddress, string macAddress, string description = "")
+        public ManagedHost(Guid id, string name, string sshUser, string sshPassword, string ipAddress, string macAddress, string description = "", bool legacySshSupported = false)
         {
             Id = id;
             Name = name;
@@ -51,6 +55,7 @@ namespace SOM2.Domain.Entities
             MacAddress = macAddress;
             Description = description;
             Status = HostStatus.Unknown;
+            LegacySshSupported = legacySshSupported;
         }
     }
 }

@@ -1,0 +1,86 @@
+﻿@model List<SOM2.Application.DTO.ManagedHostDto>
+
+@{
+    ViewData["Title"] = "Hosty Zarządzane";
+}
+
+<h1>Hosty Zarządzane</h1>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-info">@TempData["Message"]</div>
+}
+
+<!-- Przyciski globalne -->
+<div class="mb-3">
+    <form asp-action="TurnOnAll" method="post" class="d-inline">
+        <button type="submit" class="btn btn-success btn-sm">Włącz wszystkie</button>
+    </form>
+    <form asp-action="TurnOffAll" method="post" class="d-inline">
+        <button type="submit" class="btn btn-danger btn-sm">Wyłącz wszystkie</button>
+    </form>
+</div>
+
+<!-- Formularz dla zaznaczonych hostów -->
+<form asp-action="BatchAction" method="post" id="batchForm">
+    <div class="mb-2 d-flex align-items-center gap-2">
+        <select class="form-select" name="Action" style="width:auto;">
+            <option value="">Wybierz akcję...</option>
+            <option value="TurnOn">Włącz</option>
+            <option value="TurnOff">Wyłącz</option>
+            <option value="Restart">Restart</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Zastosuj dla zaznaczonych</button>
+    </div>
+
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="checkAll" /></th>
+                <th>Nazwa</th>
+                <th>Opis</th>
+                <th>Adres IP</th>
+                <th>Adres MAC</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var host in Model)
+            {
+                <tr>
+                    <td><input type="checkbox" name="SelectedIds" value="@host.Id" /></td>
+                    <td>@host.Name</td>
+                    <td>@host.Description</td>
+                    <td>@host.IpAddress</td>
+                    <td>@host.MacAddress</td>
+                    <td>
+                        <form asp-action="TurnOn" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@host.Id" />
+                            <button type="submit" class="btn btn-sm btn-success">Włącz</button>
+                        </form>
+
+                        <form asp-action="Restart" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@host.Id" />
+                            <button type="submit" class="btn btn-sm btn-warning">Restart</button>
+                        </form>
+
+                        <form asp-action="TurnOff" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@host.Id" />
+                            <button type="submit" class="btn btn-sm btn-danger">Wyłącz</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</form>
+
+@section Scripts {
+    <script>
+        // Check/uncheck wszystkie checkboxy
+        document.getElementById('checkAll').addEventListener('click', function () {
+            var checkboxes = document.querySelectorAll('input[name="SelectedIds"]');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    </script>
+}
