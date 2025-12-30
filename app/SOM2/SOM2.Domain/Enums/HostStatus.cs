@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SOM2.Domain.Entities
+namespace SOM2.Domain.Enums
 {
     public enum HostStatus
     {

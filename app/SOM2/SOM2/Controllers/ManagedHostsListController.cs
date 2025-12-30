@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SOM2.Application.Interfaces;
 using SOM2.Application.DTO;
+using SOM2.Application.Interfaces;
+using SOM2.Domain.Entities;
 using SOM2.Web.Models.ManagedHost;
 
 namespace SOM2.Web.Controllers
@@ -23,27 +24,50 @@ namespace SOM2.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult TurnOn(Guid id)
+        public async Task<IActionResult> TurnOn(Guid id)
         {
-            // Wydmuszka – na razie tylko tekst
-            Console.WriteLine($"Włączono hosta: {id}");
-            TempData["Message"] = $"Włączono hosta: {id}";
+            try
+            {
+                var executionId = await _service.EnqueueActionAsync(id, HostActionType.PowerOn);
+                TempData["Message"] = $"Włączono hosta: {id} (akcja id: {executionId})";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Message"] = $"Nie można wykonać akcji: {ex.Message}";
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        public IActionResult Restart(Guid id)
+        public async Task<IActionResult> Restart(Guid id)
         {
-            Console.WriteLine($"Restart hosta: {id}");
-            TempData["Message"] = $"Restart hosta: {id}";
+            try
+            {
+                var executionId = await _service.EnqueueActionAsync(id, HostActionType.Reboot);
+                TempData["Message"] = $"Zrestartowano hosta: {id} (akcja id: {executionId})";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Message"] = $"Nie można wykonać akcji: {ex.Message}";
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        public IActionResult TurnOff(Guid id)
+        public async Task<IActionResult> TurnOff(Guid id)
         {
-            Console.WriteLine($"Wyłączono hosta: {id}");
-            TempData["Message"] = $"Wyłączono hosta: {id}";
+            try
+            {
+                var executionId = await _service.EnqueueActionAsync(id, HostActionType.PowerOff);
+                TempData["Message"] = $"Wyłączono hosta: {id} (akcja id: {executionId})";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["Message"] = $"Nie można wykonać akcji: {ex.Message}";
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -53,33 +77,69 @@ namespace SOM2.Web.Controllers
             if (SelectedIds == null || !SelectedIds.Any() || string.IsNullOrEmpty(Action))
                 return RedirectToAction("Index");
 
-            var hosts = await _service.GetByIdsAsync(SelectedIds);
-            var hostInfo = string.Join(", ", hosts.Select(h => $"{h.Name} ({h.IpAddress})"));
-
-            TempData["Message"] = Action switch
+            var actionEnum = Action switch
             {
-                "TurnOn" => $"Włączono hosty: {hostInfo}",
-                "TurnOff" => $"Wyłączono hosty: {hostInfo}",
-                "Restart" => $"Zrestartowano hosty: {hostInfo}",
-                _ => "Akcja wykonana"
+                "TurnOn" => HostActionType.PowerOn,
+                "TurnOff" => HostActionType.PowerOff,
+                "Restart" => HostActionType.Reboot,
+                _ => throw new ArgumentException("Nieznana akcja")
             };
 
+            foreach (var hostId in SelectedIds)
+            {
+                try
+                {
+                    await _service.EnqueueActionAsync(hostId, actionEnum);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Możesz logować lub ignorować hosty z już trwającą akcją
+                }
+            }
+
+            TempData["Message"] = $"Akcje '{Action}' zapisane dla zaznaczonych hostów";
             return RedirectToAction("Index");
         }
 
         [HttpPost]
         public async Task<IActionResult> TurnOnAll()
         {
-            //await _service.TurnOnAllHostsAsync();
-            TempData["Message"] = "Wszystkie hosty włączone";
+            var hosts = await _service.GetAllAsync();
+
+            foreach (var host in hosts)
+            {
+                try
+                {
+                    await _service.EnqueueActionAsync(host.Id, HostActionType.PowerOn);
+                }
+                catch (InvalidOperationException)
+                {
+                    // host już ma akcję w trakcie
+                }
+            }
+
+            TempData["Message"] = "Wszystkie hosty włączone (enqueue)";
             return RedirectToAction("Index");
         }
 
         [HttpPost]
         public async Task<IActionResult> TurnOffAll()
         {
-            //await _service.TurnOffAllHostsAsync();
-            TempData["Message"] = "Wszystkie hosty wyłączone";
+            var hosts = await _service.GetAllAsync();
+
+            foreach (var host in hosts)
+            {
+                try
+                {
+                    await _service.EnqueueActionAsync(host.Id, HostActionType.PowerOff);
+                }
+                catch (InvalidOperationException)
+                {
+                    // host już ma akcję w trakcie
+                }
+            }
+
+            TempData["Message"] = "Wszystkie hosty wyłączone (enqueue)";
             return RedirectToAction("Index");
         }
     }

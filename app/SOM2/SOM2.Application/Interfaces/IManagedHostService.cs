@@ -17,10 +17,15 @@ namespace SOM2.Application.Interfaces
         Task UpdateAsync(ManagedHostUpdateDto host);
 
         Task<ManagedHostUpdateDto?> GetByIdAsync(Guid id);
-
         Task<(IEnumerable<ManagedHostDto> Hosts, int TotalCount)> GetPagedAsync(PaginationParams pagination, ManagedHostFilter? filter = null);
-
         Task<List<ManagedHostUpdateDto>> GetByIdsAsync(List<Guid> ids);
+
+
+        // ETAP 1 – enqueue akcji
+        Task<Guid> EnqueueActionAsync(Guid hostId, HostActionType action);
+
+        // opcjonalnie do sprawdzania blokady
+        Task<bool> HasRunningActionAsync(Guid hostId);
 
     }
 }

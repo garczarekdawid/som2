@@ -16,5 +16,7 @@ namespace SOM2.Domain.Interfaces
         Task DeleteAsync(ManagedHost host);
 
         Task<(List<ManagedHost> Hosts, int TotalCount)> GetPagedAsync(int page, int pageSize, string? search);
+
+        
     }
 }

@@ -1,4 +1,5 @@
 ﻿using SOM2.Domain.Entities;
+using SOM2.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,6 +46,10 @@ namespace SOM2.Application.DTO
         public string Description { get; set; }
 
         public bool LegacySshSupported { get; set; }
+
+        public HostActionType? LastActionType { get; set; }
+        public HostActionStatus? LastActionStatus { get; set; }
+        public DateTime? LastActionTime { get; set; }
     }
 
     public class ManagedHostUpdateDto
@@ -58,6 +63,9 @@ namespace SOM2.Application.DTO
         public string? Description { get; set; }
 
         public bool LegacySshSupported { get; set; }
+
+
+ 
     }
 
 

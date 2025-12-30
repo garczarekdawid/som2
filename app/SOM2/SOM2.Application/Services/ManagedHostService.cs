@@ -2,6 +2,7 @@
 using SOM2.Application.DTO;
 using SOM2.Application.Interfaces;
 using SOM2.Domain.Entities;
+using SOM2.Domain.Enums;
 using SOM2.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -15,10 +16,12 @@ namespace SOM2.Application.Services
     public class ManagedHostService : IManagedHostService
     {
         private readonly IManagedHostRepository _repo;
+        private readonly IHostActionRepository _hostActionRepo;
 
-        public ManagedHostService(IManagedHostRepository repo)
+        public ManagedHostService(IManagedHostRepository repo, IHostActionRepository hostActionRepo)
         {
             _repo = repo;
+            _hostActionRepo = hostActionRepo;
         }
 
         //public async Task<List<ManagedHostDto>> GetAllAsync()
@@ -28,15 +31,25 @@ namespace SOM2.Application.Services
         {
             var hosts = await _repo.GetAllAsync(); // List<ManagedHost>
 
-            // Konwersja encji -> DTO
-            var dtoList = hosts.Select(h => new ManagedHostDto
+            var dtoList = new List<ManagedHostDto>();
+
+            foreach (var h in hosts)
             {
-                Id = h.Id,
-                Name = h.Name,
-                IpAddress = h.IpAddress,
-                MacAddress = h.MacAddress,
-                Description = h.Description
-            }).ToList();
+                var lastAction = await _hostActionRepo.GetLastForHostAsync(h.Id); // metoda repo do napisania
+
+                dtoList.Add(new ManagedHostDto
+                {
+                    Id = h.Id,
+                    Name = h.Name,
+                    IpAddress = h.IpAddress,
+                    MacAddress = h.MacAddress,
+                    Description = h.Description,
+                    LegacySshSupported = h.LegacySshSupported,
+                    LastActionType = lastAction?.Action,
+                    LastActionStatus = lastAction?.Status,
+                    LastActionTime = lastAction?.CreatedAt
+                });
+            }
 
             return dtoList;
         }
@@ -121,5 +134,29 @@ namespace SOM2.Application.Services
 
             return list;
         }
+
+
+        public async Task<Guid> EnqueueActionAsync(Guid hostId, HostActionType action)
+        {
+            // blokada jednoczesnych akcji na tym samym hoście
+            if (await _hostActionRepo.HasRunningActionAsync(hostId))
+                throw new InvalidOperationException("Host ma już działającą akcję");
+
+            var execution = new HostActionExecution
+            {
+                Id = Guid.NewGuid(),
+                HostId = hostId,
+                Action = action,
+                Status = HostActionStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _hostActionRepo.AddAsync(execution);
+
+            return execution.Id;
+        }
+
+        public async Task<bool> HasRunningActionAsync(Guid hostId)
+            => await _hostActionRepo.HasRunningActionAsync(hostId);
     }
 }

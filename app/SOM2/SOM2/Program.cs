@@ -4,6 +4,7 @@ using SOM2.Application.Services;
 using SOM2.Domain.Interfaces;
 using SOM2.Infrastructure.Persistence;
 using SOM2.Infrastructure.Repositories;
+using SOM2.Infrastructure.Workers;
 
 namespace SOM2
 {
@@ -21,6 +22,10 @@ namespace SOM2
 
             builder.Services.AddScoped<IManagedHostRepository, ManagedHostRepository>();
             builder.Services.AddScoped<IManagedHostService, ManagedHostService>();
+
+            builder.Services.AddScoped<IHostActionRepository, HostActionRepository>();
+            builder.Services.AddScoped<IHostActionExecutor, HostActionExecutor>();
+            builder.Services.AddHostedService<HostActionWorker>();
 
             var app = builder.Build();
 

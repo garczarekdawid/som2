@@ -11,6 +11,7 @@ namespace SOM2.Infrastructure.Persistence
     public class AppDbContext : DbContext
     {
         public DbSet<ManagedHost> ManagedHosts => Set<ManagedHost>();
+        public DbSet<HostActionExecution> HostActionExecutions => Set<HostActionExecution>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)

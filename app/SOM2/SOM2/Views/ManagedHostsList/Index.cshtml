@@ -1,4 +1,5 @@
 ﻿@model List<SOM2.Application.DTO.ManagedHostDto>
+@using SOM2.Domain.Enums;
 
 @{
     ViewData["Title"] = "Hosty Zarządzane";
@@ -42,6 +43,7 @@
                 <th>Adres IP</th>
                 <th>Adres MAC</th>
                 <th>Akcje</th>
+                <th>Ostatnia akcja</th>
             </tr>
         </thead>
         <tbody>
@@ -69,6 +71,31 @@
                             <button type="submit" class="btn btn-sm btn-danger">Wyłącz</button>
                         </form>
                     </td>
+                    <td>@host.LastActionType
+                        @switch (host.LastActionStatus)
+                        {
+                            case HostActionStatus.Pending:
+                                <span class="badge bg-secondary">Pending</span>
+                                ;
+                                break;
+                            case HostActionStatus.Running:
+                                <span class="badge bg-info">Running</span>
+                                ;
+                                break;
+                            case HostActionStatus.Success:
+                                <span class="badge bg-success">Success</span>
+                                ;
+                                break;
+                            case HostActionStatus.Failed:
+                                <span class="badge bg-danger">Failed</span>
+                                ;
+                                break;
+                            default:
+                                <span class="badge bg-light text-dark">–</span>
+                                ;
+                                break;
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
@@ -83,4 +110,5 @@
             checkboxes.forEach(cb => cb.checked = this.checked);
         });
     </script>
+
 }
