@@ -24,6 +24,8 @@
 
 <!-- Formularz dla zaznaczonych hostów -->
 <form asp-action="BatchAction" method="post" id="batchForm">
+    @Html.AntiForgeryToken()
+
     <div class="mb-2 d-flex align-items-center gap-2">
         <select class="form-select" name="Action" style="width:auto;">
             <option value="">Wybierz akcję...</option>
@@ -56,20 +58,33 @@
                     <td>@host.IpAddress</td>
                     <td>@host.MacAddress</td>
                     <td>
-                        <form asp-action="TurnOn" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@host.Id" />
-                            <button type="submit" class="btn btn-sm btn-success">Włącz</button>
-                        </form>
+                        <!-- używamy przycisków z formaction zamiast zagnieżdżonych formularzy -->
+                        <button type="submit"
+                                class="btn btn-sm btn-success"
+                                formaction="@Url.Action("TurnOn", "ManagedHostsList")"
+                                formmethod="post"
+                                name="id"
+                                value="@host.Id">
+                            Włącz
+                        </button>
 
-                        <form asp-action="Restart" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@host.Id" />
-                            <button type="submit" class="btn btn-sm btn-warning">Restart</button>
-                        </form>
+                        <button type="submit"
+                                class="btn btn-sm btn-warning"
+                                formaction="@Url.Action("Restart", "ManagedHostsList")"
+                                formmethod="post"
+                                name="id"
+                                value="@host.Id">
+                            Restart
+                        </button>
 
-                        <form asp-action="TurnOff" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@host.Id" />
-                            <button type="submit" class="btn btn-sm btn-danger">Wyłącz</button>
-                        </form>
+                        <button type="submit"
+                                class="btn btn-sm btn-danger"
+                                formaction="@Url.Action("TurnOff", "ManagedHostsList")"
+                                formmethod="post"
+                                name="id"
+                                value="@host.Id">
+                            Wyłącz
+                        </button>
                     </td>
                     <td>@host.LastActionType
                         @switch (host.LastActionStatus)
@@ -104,11 +119,14 @@
 
 @section Scripts {
     <script>
-        // Check/uncheck wszystkie checkboxy
-        document.getElementById('checkAll').addEventListener('click', function () {
-            var checkboxes = document.querySelectorAll('input[name="SelectedIds"]');
-            checkboxes.forEach(cb => cb.checked = this.checked);
-        });
+        // Guard dla bezpieczeństwa — element może nie istnieć w DOM
+        var checkAllEl = document.getElementById('checkAll');
+        if (checkAllEl) {
+            checkAllEl.addEventListener('click', function () {
+                var checkboxes = document.querySelectorAll('input[name="SelectedIds"]');
+                checkboxes.forEach(cb => cb.checked = this.checked);
+            });
+        }
     </script>
 
 }

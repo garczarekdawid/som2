@@ -13,7 +13,6 @@ namespace SOM2.Domain.Entities
 
         // Powiązanie z hostem
         public Guid HostId { get; set; }
-        public ManagedHost Host { get; set; } = null!;
 
         // Jaka akcja
         public HostActionType Action { get; set; }
@@ -29,5 +28,7 @@ namespace SOM2.Domain.Entities
         // Wynik
         public int? ExitCode { get; set; }
         public string? Output { get; set; }           // skrócony stdout/stderr
+
+        public ManagedHost ManagedHost { get; set; } = null!;
     }
 }

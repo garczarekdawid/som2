@@ -13,9 +13,21 @@ namespace SOM2.Infrastructure.Persistence
         public DbSet<ManagedHost> ManagedHosts => Set<ManagedHost>();
         public DbSet<HostActionExecution> HostActionExecutions => Set<HostActionExecution>();
 
+
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<HostActionExecution>()
+                .HasOne(h => h.ManagedHost)
+                .WithMany(m => m.HostActions)
+                .HasForeignKey(h => h.HostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using SOM2.Domain.Entities;
+﻿using SOM2.Application.Common;
+using SOM2.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,6 @@ namespace SOM2.Application.Interfaces
 {
     public interface IHostActionExecutor
     {
-        Task<bool> ExecuteAsync(HostActionExecution action);
+        Task<ExecutionResult> ExecuteAsync(HostActionExecution action);
     }
 }

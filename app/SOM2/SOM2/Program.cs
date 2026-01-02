@@ -25,6 +25,13 @@ namespace SOM2
 
             builder.Services.AddScoped<IHostActionRepository, HostActionRepository>();
             builder.Services.AddScoped<IHostActionExecutor, HostActionExecutor>();
+
+            // Zarejestruj brakuj¹cy read-repository u¿ywany przez HostActionQueryService
+            builder.Services.AddScoped<IHostActionReadRepository, HostActionReadRepository>();
+
+            builder.Services.AddScoped<IHostActionQueryService, HostActionQueryService>();
+
+
             builder.Services.AddHostedService<HostActionWorker>();
 
             var app = builder.Build();

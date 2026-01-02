@@ -1,0 +1,33 @@
+﻿@model List<SOM2.Application.DTO.HostActionListDto>
+
+<h2>Historia Akcji Hostów</h2>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Host</th>
+            <th>Akcja</th>
+            <th>Status</th>
+            <th>Utworzono</th>
+            <th>Rozpoczęto</th>
+            <th>Zakończono</th>
+            <th>Detale</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.HostName</td>
+                <td>@item.Action</td>
+                <td>@item.Status</td>
+                <td>@item.CreatedAt.ToLocalTime()</td>
+                <td>@item.StartedAt?.ToLocalTime()</td>
+                <td>@item.FinishedAt?.ToLocalTime()</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

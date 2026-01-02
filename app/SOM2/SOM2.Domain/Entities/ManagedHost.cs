@@ -19,6 +19,9 @@ namespace SOM2.Domain.Entities
         public string? Description { get; private set; }
         public bool LegacySshSupported { get; private set; } = false;
 
+        public ICollection<HostActionExecution> HostActions { get; set; } = new List<HostActionExecution>();
+
+
         public void SetStatus(HostStatus status)
         {
             Status = status;

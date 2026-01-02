@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using SOM2.Domain.Entities;
-using SOM2.Domain.Interfaces;
-using SOM2.Domain.Enums;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using SOM2.Application.Interfaces;
+using SOM2.Domain.Entities;
+using SOM2.Domain.Enums;
+using SOM2.Domain.Interfaces;
+using SOM2.Application.Common;
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,13 +34,18 @@ namespace SOM2.Infrastructure.Workers
                     foreach (var action in pending)
                     {
                         action.Status = HostActionStatus.Running;
+                        action.StartedAt = DateTime.UtcNow;
                         await repo.UpdateAsync(action);
 
                         try
                         {
-                            bool success = await executor.ExecuteAsync(action);
+                            ExecutionResult result = await executor.ExecuteAsync(action);
 
-                            action.Status = success ? HostActionStatus.Success : HostActionStatus.Failed;
+                            action.ExitCode = result.ExitCode;
+                            action.Output = result.Output;
+                            action.Status = result.ExitCode == 0
+                                ? HostActionStatus.Success
+                                : HostActionStatus.Failed;
                         }
                         catch
                         {
