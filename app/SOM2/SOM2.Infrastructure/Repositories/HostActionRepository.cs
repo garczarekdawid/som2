@@ -36,6 +36,7 @@ namespace SOM2.Infrastructure.Repositories
         {
             return await _db.HostActionExecutions
                 .Where(x => x.Status == HostActionStatus.Pending)
+                .Include(x => x.ManagedHost)
                 .OrderBy(x => x.CreatedAt)
                 .FirstOrDefaultAsync();
         }
@@ -58,6 +59,7 @@ namespace SOM2.Infrastructure.Repositories
         {
             return await _db.HostActionExecutions
                 .Where(x => x.Status == HostActionStatus.Pending)
+                .Include(x => x.ManagedHost)
                 .OrderBy(x => x.CreatedAt)
                 .ToListAsync();
         }

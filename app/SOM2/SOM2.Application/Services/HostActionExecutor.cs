@@ -9,20 +9,20 @@ using System.Threading.Tasks;
 
 namespace SOM2.Application.Services
 {
-    public class HostActionExecutor : IHostActionExecutor
+    public class HostActionExecutor// : IHostActionExecutor
     {
-        public async Task<ExecutionResult> ExecuteAsync(HostActionExecution action)
-        {
-            // Symulacja: losowy czas wykonania 1–3s
-            await Task.Delay(new Random().Next(1000, 3000));
+        //public async Task<ExecutionResult> ExecuteAsync(HostActionExecution action)
+        //{
+        //    // Symulacja: losowy czas wykonania 1–3s
+        //    await Task.Delay(new Random().Next(1000, 3000));
 
-            bool success = new Random().NextDouble() > 0.1; // 90% sukces
+        //    bool success = new Random().NextDouble() > 0.1; // 90% sukces
 
-            return new ExecutionResult
-            {
-                ExitCode = success ? 0 : 1,
-                Output = success ? "Action completed successfully" : "Action failed"
-            };
-        }
+        //    return new ExecutionResult
+        //    {
+        //        ExitCode = success ? 0 : 1,
+        //        Output = success ? "Action completed successfully" : "Action failed"
+        //    };
+        //}
     }
 }

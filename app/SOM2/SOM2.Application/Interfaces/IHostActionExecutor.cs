@@ -10,6 +10,6 @@ namespace SOM2.Application.Interfaces
 {
     public interface IHostActionExecutor
     {
-        Task<ExecutionResult> ExecuteAsync(HostActionExecution action);
+        Task<ExecutionResult> ExecuteAsync(HostActionExecution action, CancellationToken ct);
     }
 }

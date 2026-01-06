@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using SOM2.Application.Common;
 using SOM2.Application.Interfaces;
 using SOM2.Application.Services;
 using SOM2.Domain.Interfaces;
@@ -24,7 +26,18 @@ namespace SOM2
             builder.Services.AddScoped<IManagedHostService, ManagedHostService>();
 
             builder.Services.AddScoped<IHostActionRepository, HostActionRepository>();
-            builder.Services.AddScoped<IHostActionExecutor, HostActionExecutor>();
+            //builder.Services.AddScoped<IHostActionExecutor, HostActionExecutor>();
+
+
+            builder.Services.Configure<AnsibleOptions>(
+            builder.Configuration.GetSection("Ansible"));
+
+            builder.Services.AddScoped<IHostActionExecutor>(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<AnsibleOptions>>().Value;
+                return new AnsibleHostActionExecutor(options);
+            });
+
 
             // Zarejestruj brakuj¹cy read-repository u¿ywany przez HostActionQueryService
             builder.Services.AddScoped<IHostActionReadRepository, HostActionReadRepository>();

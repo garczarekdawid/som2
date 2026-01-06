@@ -1,0 +1,9 @@
+---
+- name: Reboot host
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Reboot the host
+      ansible.builtin.command: /sbin/reboot
+      become: yes
+      become_method: sudo

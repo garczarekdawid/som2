@@ -9,6 +9,8 @@ namespace SOM2.Application.Common
     public class ExecutionResult
     {
         public int ExitCode { get; set; }
-        public string Output { get; set; } = "";
+        public string StdOut { get; set; } = "";
+        public string StdErr { get; set; } = "";
+        public bool ProcessStarted { get; set; } = false;
     }
 }

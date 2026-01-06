@@ -8,6 +8,7 @@ using SOM2.Application.Common;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace SOM2.Infrastructure.Workers
 {
@@ -24,40 +25,53 @@ namespace SOM2.Infrastructure.Workers
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                using (var scope = _services.CreateScope())
+                using var scope = _services.CreateScope();
+
+                var repo = scope.ServiceProvider.GetRequiredService<IHostActionRepository>();
+                var executor = scope.ServiceProvider.GetRequiredService<IHostActionExecutor>();
+
+                var pending = await repo.GetPendingActionsAsync();
+
+                foreach (var action in pending)
                 {
-                    var repo = scope.ServiceProvider.GetRequiredService<IHostActionRepository>();
-                    var executor = scope.ServiceProvider.GetRequiredService<IHostActionExecutor>();
+                    action.Status = HostActionStatus.Running;
+                    action.StartedAt = DateTime.UtcNow;
+                    await repo.UpdateAsync(action);
 
-                    var pending = await repo.GetPendingActionsAsync();
-
-                    foreach (var action in pending)
+                    try
                     {
-                        action.Status = HostActionStatus.Running;
-                        action.StartedAt = DateTime.UtcNow;
-                        await repo.UpdateAsync(action);
+                        ExecutionResult result = await executor.ExecuteAsync(action, stoppingToken);
 
-                        try
+                        action.ExitCode = result.ExitCode;
+                        action.Output = result.StdOut + "\n" + result.StdErr;
+
+                        // ustawienie statusu w zależności od typu akcji
+                        switch (action.Action)
                         {
-                            ExecutionResult result = await executor.ExecuteAsync(action);
+                            case HostActionType.Reboot:
+                                action.Status = result.ExitCode == 0 ? HostActionStatus.Success : HostActionStatus.Failed;
+                                break;
 
-                            action.ExitCode = result.ExitCode;
-                            action.Output = result.Output;
-                            action.Status = result.ExitCode == 0
-                                ? HostActionStatus.Success
-                                : HostActionStatus.Failed;
-                        }
-                        catch
-                        {
-                            action.Status = HostActionStatus.Failed;
-                        }
+                            case HostActionType.PowerOff:
+                                // unreachable lub non-zero = OK
+                                action.Status = HostActionStatus.Success;
+                                break;
 
-                        action.FinishedAt = DateTime.UtcNow;
-                        await repo.UpdateAsync(action);
+                            default:
+                                action.Status = HostActionStatus.Failed;
+                                break;
+                        }
                     }
+                    catch
+                    {
+                        action.Status = HostActionStatus.Failed;
+                    }
+
+                    action.FinishedAt = DateTime.UtcNow;
+                    await repo.UpdateAsync(action);
                 }
 
-                await Task.Delay(5000, stoppingToken); // 5s między sprawdzeniami
+                await Task.Delay(5000, stoppingToken);
             }
         }
     }

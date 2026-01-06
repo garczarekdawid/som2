@@ -1,0 +1,9 @@
+---
+- name: Power off host
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Shutdown the host
+      ansible.builtin.command: /sbin/shutdown -h now
+      become: yes
+      become_method: sudo
