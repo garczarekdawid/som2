@@ -1,18 +1,20 @@
-﻿using SOM2.Application.Interfaces;
-using SOM2.Application.Common;
+﻿using SOM2.Application.Common;
+using SOM2.Application.Interfaces;
 using SOM2.Domain.Entities;
 using SOM2.Domain.Enums;
+using System;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
 
 namespace SOM2.Application.Services
 {
     public class AnsibleHostActionExecutor : IHostActionExecutor
     {
         private readonly AnsibleOptions _options;
+        private static readonly TimeSpan ExecutionTimeout = TimeSpan.FromSeconds(120);
 
         public AnsibleHostActionExecutor(AnsibleOptions options)
         {
@@ -29,40 +31,33 @@ namespace SOM2.Application.Services
             {
                 HostActionType.Reboot => "restart.yml",
                 HostActionType.PowerOff => "poweroff.yml",
-                _ => throw new NotSupportedException($"Akcja {action.Action} nie jest obsługiwana")
+                _ => throw new NotSupportedException($"Action {action.Action} not supported")
             };
 
-            // Ścieżka do katalogu Ansible
+            // Ścieżki
             string basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, _options.BasePath));
-            string playbookPath = Path.Combine(basePath, "Ansible\\playbooks", playbook);
-
-            // Zachowujemy ścieżkę Windows dla czyszczenia
-            string inventoryWindowsPath = Path.Combine(basePath, "Ansible\\inventory", $"tmp_{action.Id}.ini");
+            string playbookWindowsPath = Path.Combine(basePath, "Ansible", "playbooks", playbook);
+            string inventoryWindowsPath = Path.Combine(basePath, "Ansible", "inventory", $"tmp_{action.Id}.ini");
 
             // Legacy SSH
             string legacyArgs = host.LegacySshSupported
                 ? " ansible_ssh_common_args='-oHostKeyAlgorithms=+ssh-dss'"
                 : "";
 
-            // Dynamiczne inventory - Linux/WSL kompatybilne
-            string inventoryContent = $"[all]\n{host.IpAddress} ansible_user={host.SshUser} ansible_ssh_pass={host.SshPassword}{legacyArgs} ansible_become=true ansible_become_pass={host.SshPassword}";
+            // Dynamiczne inventory
+            string inventoryContent =
+$@"[all]
+{host.IpAddress} ansible_user={host.SshUser} ansible_ssh_pass={host.SshPassword}{legacyArgs} ansible_become=true ansible_become_pass={host.SshPassword}";
+
             await File.WriteAllTextAsync(inventoryWindowsPath, inventoryContent, ct);
 
-            // Przygotowanie ścieżek do argumentów
-            string playbookPathForArgs = playbookPath;
-            string inventoryPathForArgs = inventoryWindowsPath;
-
-            if (_options.Mode == "Wsl")
-            {
-                playbookPathForArgs = ToWslPath(playbookPath);
-                inventoryPathForArgs = ToWslPath(inventoryWindowsPath);
-            }
-
-            // Argumenty do ansible-playbook
-            string args = $"-i \"{inventoryPathForArgs}\" \"{playbookPathForArgs}\"";
+            // Ścieżki dla argów
+            string playbookArgPath = _options.Mode == "Wsl" ? ToWslPath(playbookWindowsPath) : playbookWindowsPath;
+            string inventoryArgPath = _options.Mode == "Wsl" ? ToWslPath(inventoryWindowsPath) : inventoryWindowsPath;
+            string args = $"-i \"{inventoryArgPath}\" \"{playbookArgPath}\"";
 
             // Konfiguracja procesu
-            ProcessStartInfo psi = _options.Mode switch
+            var psi = _options.Mode switch
             {
                 "Wsl" => new ProcessStartInfo
                 {
@@ -82,22 +77,25 @@ namespace SOM2.Application.Services
                     UseShellExecute = false,
                     CreateNoWindow = true
                 },
-                _ => throw new NotSupportedException($"Tryb {_options.Mode} nieobsługiwany")
+                _ => throw new NotSupportedException($"Mode {_options.Mode} not supported")
             };
 
-            // WSL: wymuszamy użycie sshpass
             if (_options.Mode == "Wsl")
-            {
                 psi.Environment["ANSIBLE_USE_SSHPASS"] = "true";
-            }
+
+            Process? process = null;
 
             try
             {
-                using var process = Process.Start(psi);
+                process = Process.Start(psi);
                 result.ProcessStarted = process != null;
 
                 if (process == null)
+                {
+                    result.ExitCode = -1;
+                    result.StdErr = "Failed to start ansible process";
                     return result;
+                }
 
                 var stdout = new StringBuilder();
                 var stderr = new StringBuilder();
@@ -108,29 +106,42 @@ namespace SOM2.Application.Services
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
-                await process.WaitForExitAsync(ct);
+                // Timeout + administracyjny cancel
+                using var timeoutCts = new CancellationTokenSource(ExecutionTimeout);
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
-                result.ExitCode = process.ExitCode;
+                try
+                {
+                    await process.WaitForExitAsync(linkedCts.Token);
+                    result.ExitCode = process.ExitCode;
+                }
+                catch (OperationCanceledException)
+                {
+                    try { if (!process.HasExited) process.Kill(entireProcessTree: true); } catch { }
+                    result.ExitCode = -1;
+                    result.StdErr = timeoutCts.IsCancellationRequested
+                        ? "Execution timeout exceeded"
+                        : "Execution cancelled by user";
+                }
+
                 result.StdOut = stdout.ToString();
                 result.StdErr = stderr.ToString();
+
+                return result;
             }
             catch (Exception ex)
             {
+                result.ExitCode = -1;
                 result.StdErr = ex.ToString();
+                return result;
             }
             finally
             {
-                // Usuń tymczasowe inventory (Windows path!)
-                if (File.Exists(inventoryWindowsPath))
-                {
-                    try { File.Delete(inventoryWindowsPath); } catch { /* ignorujemy */ }
-                }
+                try { if (File.Exists(inventoryWindowsPath)) File.Delete(inventoryWindowsPath); } catch { }
+                try { process?.Dispose(); } catch { }
             }
-
-            return result;
         }
 
-        // Zamiana ścieżki Windows -> WSL
         private static string ToWslPath(string windowsPath)
         {
             var fullPath = Path.GetFullPath(windowsPath);

@@ -4,11 +4,11 @@ using SOM2.Application.Interfaces;
 using SOM2.Domain.Entities;
 using SOM2.Domain.Enums;
 using SOM2.Domain.Interfaces;
-using SOM2.Application.Common;
 using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text;
+using SOM2.Application.Common;
 
 namespace SOM2.Infrastructure.Workers
 {
@@ -26,7 +26,6 @@ namespace SOM2.Infrastructure.Workers
             while (!stoppingToken.IsCancellationRequested)
             {
                 using var scope = _services.CreateScope();
-
                 var repo = scope.ServiceProvider.GetRequiredService<IHostActionRepository>();
                 var executor = scope.ServiceProvider.GetRequiredService<IHostActionExecutor>();
 
@@ -45,26 +44,15 @@ namespace SOM2.Infrastructure.Workers
                         action.ExitCode = result.ExitCode;
                         action.Output = result.StdOut + "\n" + result.StdErr;
 
-                        // ustawienie statusu w zależności od typu akcji
-                        switch (action.Action)
-                        {
-                            case HostActionType.Reboot:
-                                action.Status = result.ExitCode == 0 ? HostActionStatus.Success : HostActionStatus.Failed;
-                                break;
-
-                            case HostActionType.PowerOff:
-                                // unreachable lub non-zero = OK
-                                action.Status = HostActionStatus.Success;
-                                break;
-
-                            default:
-                                action.Status = HostActionStatus.Failed;
-                                break;
-                        }
+                        // Status w zależności od ExitCode
+                        action.Status = result.ExitCode == 0
+                            ? HostActionStatus.Success
+                            : HostActionStatus.Failed;
                     }
                     catch
                     {
                         action.Status = HostActionStatus.Failed;
+                        action.Output = "Execution threw exception";
                     }
 
                     action.FinishedAt = DateTime.UtcNow;
