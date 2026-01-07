@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SOM2.Application.Interfaces;
 using SOM2.Domain.Entities;
@@ -26,41 +26,60 @@ namespace SOM2.Infrastructure.Workers
             while (!stoppingToken.IsCancellationRequested)
             {
                 using var scope = _services.CreateScope();
-                var repo = scope.ServiceProvider.GetRequiredService<IHostActionRepository>();
-                var executor = scope.ServiceProvider.GetRequiredService<IHostActionExecutor>();
 
-                var pending = await repo.GetPendingActionsAsync();
+                var repo = scope.ServiceProvider.GetRequiredService<IHostActionExecutionRepository>();
+                var executor = scope.ServiceProvider.GetRequiredService<IAnsibleHostActionExecutor>();
 
-                foreach (var action in pending)
+                // pobieramy max 10 naraz
+                var pending = await repo.GetPendingActionsAsync(limit: 10);
+
+                if (pending.Any())
                 {
-                    action.Status = HostActionStatus.Running;
-                    action.StartedAt = DateTime.UtcNow;
-                    await repo.UpdateAsync(action);
-
-                    try
+                    // ustawiamy status Running
+                    foreach (var action in pending)
                     {
-                        ExecutionResult result = await executor.ExecuteAsync(action, stoppingToken);
-
-                        action.ExitCode = result.ExitCode;
-                        action.Output = result.StdOut + "\n" + result.StdErr;
-
-                        // Status w zależności od ExitCode
-                        action.Status = result.ExitCode == 0
-                            ? HostActionStatus.Success
-                            : HostActionStatus.Failed;
-                    }
-                    catch
-                    {
-                        action.Status = HostActionStatus.Failed;
-                        action.Output = "Execution threw exception";
+                        action.Status = HostActionStatus.Running;
+                        action.StartedAt = DateTime.UtcNow;
+                        await repo.UpdateAsync(action);
                     }
 
-                    action.FinishedAt = DateTime.UtcNow;
-                    await repo.UpdateAsync(action);
+                    // tworzymy Taski
+                    var tasks = pending.Select(action =>
+                        ExecuteSingleAsync(action, repo, executor, stoppingToken)
+                    );
+
+                    // czekamy aż wszystkie się wykonają
+                    await Task.WhenAll(tasks);
                 }
 
+                // zamiast 5s stałej pauzy można ewentualnie bardziej dynamicznie
                 await Task.Delay(5000, stoppingToken);
             }
         }
+
+        private async Task ExecuteSingleAsync(
+            HostActionExecution action,
+            IHostActionExecutionRepository repo,
+            IAnsibleHostActionExecutor executor,
+            CancellationToken stoppingToken)
+        {
+            try
+            {
+                var result = await executor.ExecuteAsync(action, stoppingToken);
+
+                action.ExitCode = result.ExitCode;
+                action.Output = result.StdOut + "\n" + result.StdErr;
+                action.Status = result.ExitCode == 0 ? HostActionStatus.Success : HostActionStatus.Failed;
+            }
+            catch (Exception ex)
+            {
+                action.Status = HostActionStatus.Failed;
+                action.Output = $"Execution threw exception: {ex.Message}";
+            }
+
+            action.FinishedAt = DateTime.UtcNow;
+            await repo.UpdateAsync(action);
+        }
+
     }
 }
