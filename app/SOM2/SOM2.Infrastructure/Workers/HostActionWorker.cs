@@ -27,8 +27,8 @@ namespace SOM2.Infrastructure.Workers
             {
                 using var scope = _services.CreateScope();
 
-                var repo = scope.ServiceProvider.GetRequiredService<IHostActionExecutionRepository>();
-                var executor = scope.ServiceProvider.GetRequiredService<IAnsibleHostActionExecutor>();
+                var repo = scope.ServiceProvider.GetRequiredService<IHostActionRepository>();
+                var executor = scope.ServiceProvider.GetRequiredService<IHostActionExecutor>();
 
                 // pobieramy max 10 naraz
                 var pending = await repo.GetPendingActionsAsync(limit: 10);
@@ -59,8 +59,8 @@ namespace SOM2.Infrastructure.Workers
 
         private async Task ExecuteSingleAsync(
             HostActionExecution action,
-            IHostActionExecutionRepository repo,
-            IAnsibleHostActionExecutor executor,
+            IHostActionRepository repo,
+            IHostActionExecutor executor,
             CancellationToken stoppingToken)
         {
             try
@@ -68,7 +68,7 @@ namespace SOM2.Infrastructure.Workers
                 var result = await executor.ExecuteAsync(action, stoppingToken);
 
                 action.ExitCode = result.ExitCode;
-                action.Output = result.StdOut + "\n" + result.StdErr;
+                action.Output = CleanString(result.StdOut) + "\n" + CleanString(result.StdErr);
                 action.Status = result.ExitCode == 0 ? HostActionStatus.Success : HostActionStatus.Failed;
             }
             catch (Exception ex)
@@ -79,6 +79,11 @@ namespace SOM2.Infrastructure.Workers
 
             action.FinishedAt = DateTime.UtcNow;
             await repo.UpdateAsync(action);
+        }
+
+        string CleanString(string input)
+        {
+            return input?.Replace("\0", "") ?? "";
         }
 
     }

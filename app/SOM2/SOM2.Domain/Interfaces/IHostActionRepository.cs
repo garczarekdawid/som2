@@ -15,7 +15,7 @@ namespace SOM2.Domain.Interfaces
         Task UpdateAsync(HostActionExecution execution);
         Task<bool> HasRunningActionAsync(Guid hostId);
 
-        Task<List<HostActionExecution>> GetPendingActionsAsync();
+        Task<List<HostActionExecution>> GetPendingActionsAsync(int limit);
 
         Task<HostActionExecution?> GetLastForHostAsync(Guid hostId);
     }

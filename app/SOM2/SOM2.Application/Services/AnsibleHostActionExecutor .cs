@@ -65,8 +65,15 @@ $@"[all]
                     Arguments = $"ansible-playbook {args}",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.UTF8,
+                    StandardErrorEncoding = Encoding.UTF8,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    Environment =
+                    {
+                        ["LANG"] = "pl_PL.UTF-8",
+                        ["LC_ALL"] = "pl_PL.UTF-8"
+                    }
                 },
                 "Native" => new ProcessStartInfo
                 {
@@ -74,6 +81,8 @@ $@"[all]
                     Arguments = args,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.UTF8,
+                    StandardErrorEncoding = Encoding.UTF8,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 },

@@ -50,6 +50,8 @@ namespace SOM2.Application.DTO
         public HostActionType? LastActionType { get; set; }
         public HostActionStatus? LastActionStatus { get; set; }
         public DateTime? LastActionTime { get; set; }
+
+        public Guid? LastActionId { get; set; } // ID ostatniej akcji
     }
 
     public class ManagedHostUpdateDto
@@ -63,11 +65,8 @@ namespace SOM2.Application.DTO
         public string? Description { get; set; }
 
         public bool LegacySshSupported { get; set; }
-
-
  
     }
-
 
     public static class ManagedHostUpdateDtooExtensions
     {
@@ -85,5 +84,4 @@ namespace SOM2.Application.DTO
             );
         }
     }
-
 }

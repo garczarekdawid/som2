@@ -47,7 +47,8 @@ namespace SOM2.Application.Services
                     LegacySshSupported = h.LegacySshSupported,
                     LastActionType = lastAction?.Action,
                     LastActionStatus = lastAction?.Status,
-                    LastActionTime = lastAction?.CreatedAt
+                    LastActionTime = lastAction?.CreatedAt,
+                    LastActionId = lastAction?.Id
                 });
             }
 

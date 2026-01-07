@@ -9,7 +9,7 @@ namespace SOM2.Application.Interfaces
 {
     public interface IHostActionQueryService
     {
-        Task<List<HostActionListDto>> GetLatestAsync(int limit = 100);
+        Task<List<HostActionListDto>> GetLatestAsync(int limit = 500);
         Task<HostActionDetailsDto?> GetByIdAsync(Guid id);
     }
 }

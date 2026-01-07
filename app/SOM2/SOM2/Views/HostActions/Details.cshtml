@@ -1,36 +1,86 @@
 ﻿@model SOM2.Application.DTO.HostActionDetailsDto
+@using SOM2.Domain.Enums
 
 <h2>Szczegóły Akcji</h2>
 
-<div>
-    <dl class="row">
-        <dt class="col-sm-3">Action ID</dt>
-        <dd class="col-sm-9">@Model.Id</dd>
-
-        <dt class="col-sm-3">Host</dt>
-        <dd class="col-sm-9">@Model.HostName</dd>
-
-        <dt class="col-sm-3">Akcja</dt>
-        <dd class="col-sm-9">@Model.Action</dd>
-
-        <dt class="col-sm-3">Status</dt>
-        <dd class="col-sm-9">@Model.Status</dd>
-
-        <dt class="col-sm-3">Utworzono</dt>
-        <dd class="col-sm-9">@Model.CreatedAt.ToLocalTime()</dd>
-
-        <dt class="col-sm-3">Rozpoczęto</dt>
-        <dd class="col-sm-9">@Model.StartedAt?.ToLocalTime()</dd>
-
-        <dt class="col-sm-3">Zakończono</dt>
-        <dd class="col-sm-9">@Model.FinishedAt?.ToLocalTime()</dd>
-
-        <dt class="col-sm-3">Exit Code</dt>
-        <dd class="col-sm-9">@Model.ExitCode</dd>
-
-        <dt class="col-sm-3">Output</dt>
-        <dd class="col-sm-9"><pre>@Model.Output</pre></dd>
-    </dl>
+<!-- Przyciski nawigacyjne -->
+<div class="mb-3 d-flex gap-2">
+    <a asp-action="Index" class="btn btn-secondary btn-sm">Powrót do listy zdarzeń</a>
+    <a asp-action="Index" asp-controller="ManagedHostsList" class="btn btn-secondary btn-sm">Powrót do listy hostów</a>
 </div>
 
-<a asp-action="Index">Powrót do listy</a>
+<!-- Dane akcji -->
+<div class="card mb-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Action ID</dt>
+            <dd class="col-sm-9">@Model.Id</dd>
+
+            <dt class="col-sm-3">Host</dt>
+            <dd class="col-sm-9">@Model.HostName</dd>
+
+            <dt class="col-sm-3">Akcja</dt>
+            <dd class="col-sm-9">@Model.Action</dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">
+                @switch (Model.Status)
+                {
+                    case HostActionStatus.Pending:
+                        <span class="badge bg-secondary">Pending</span>
+                        ;
+                        break;
+                    case HostActionStatus.Running:
+                        <span class="badge bg-info">Running</span>
+                        ;
+                        break;
+                    case HostActionStatus.Success:
+                        <span class="badge bg-success">Success</span>
+                        ;
+                        break;
+                    case HostActionStatus.Failed:
+                        <span class="badge bg-danger">Failed</span>
+                        ;
+                        break;
+                    case HostActionStatus.Cancelled:
+                        <span class="badge bg-warning">Cancelled</span>
+                        ;
+                        break;
+                    default:
+                        <span class="badge bg-light text-dark">–</span>
+                        ;
+                        break;
+                }
+            </dd>
+
+            <dt class="col-sm-3">Utworzono</dt>
+            <dd class="col-sm-9">@Model.CreatedAt.ToLocalTime()</dd>
+
+            <dt class="col-sm-3">Rozpoczęto</dt>
+            <dd class="col-sm-9">@Model.StartedAt?.ToLocalTime()</dd>
+
+            <dt class="col-sm-3">Zakończono</dt>
+            <dd class="col-sm-9">@Model.FinishedAt?.ToLocalTime()</dd>
+
+            <dt class="col-sm-3">Exit Code</dt>
+            <dd class="col-sm-9">@Model.ExitCode</dd>
+        </dl>
+    </div>
+</div>
+
+<!-- Przycisk zakończenia akcji (tylko dla Pending/Running) -->
+@if (Model.Status == HostActionStatus.Pending || Model.Status == HostActionStatus.Running)
+{
+    <form asp-action="Cancel" method="post" class="mb-3">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-warning">Zakończ akcję</button>
+    </form>
+}
+
+<!-- Output w osobnej karcie -->
+<div class="card mb-3">
+    <div class="card-header">Output</div>
+    <div class="card-body">
+        <pre class="mb-0">@Model.Output</pre>
+    </div>
+</div>

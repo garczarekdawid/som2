@@ -105,10 +105,24 @@
                                 <span class="badge bg-danger">Failed</span>
                                 ;
                                 break;
+                            case HostActionStatus.Cancelled:
+                                <span class="badge bg-warning">Cancelled</span>
+                                ;
+                                break;
                             default:
                                 <span class="badge bg-light text-dark">–</span>
                                 ;
                                 break;
+                        }
+
+                        @if (host.LastActionId.HasValue)
+                        {
+                            <a asp-controller="HostActions"
+                               asp-action="Details"
+                               asp-route-id="@host.LastActionId.Value"
+                               class="btn btn-sm btn-outline-primary ms-2">
+                                Szczegóły
+                            </a>
                         }
                     </td>
                 </tr>
