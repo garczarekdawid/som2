@@ -1,0 +1,13 @@
+---
+- name: Wake hosts via WOL
+  hosts: localhost
+  gather_facts: no
+  vars:
+    broadcast_address: 255.255.255.255
+    mac_address: "{{ mac }}"
+
+  tasks:
+    - name: Send Wake-on-LAN packet
+      community.general.wakeonlan:
+        mac: "{{ mac_address }}"
+        broadcast: "{{ broadcast_address }}"

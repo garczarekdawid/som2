@@ -1,6 +1,6 @@
 ﻿@model List<SOM2.Application.DTO.ManagedHostDto>
 @using SOM2.Domain.Enums;
-
+@using SOM2.Web.Models;
 @{
     ViewData["Title"] = "Hosty Zarządzane";
 }
@@ -15,28 +15,34 @@
 <!-- Przyciski globalne -->
 <div class="mb-3">
     <form asp-action="TurnOnAll" method="post" class="d-inline">
+        @Html.AntiForgeryToken()
         <button type="submit" class="btn btn-success btn-sm">Włącz wszystkie</button>
     </form>
+
     <form asp-action="TurnOffAll" method="post" class="d-inline">
+        @Html.AntiForgeryToken()
         <button type="submit" class="btn btn-danger btn-sm">Wyłącz wszystkie</button>
     </form>
 </div>
 
-<!-- Formularz dla zaznaczonych hostów -->
+<!-- Formularz batch (BEZ przycisków akcji) -->
 <form asp-action="BatchAction" method="post" id="batchForm">
     @Html.AntiForgeryToken()
 
     <div class="mb-2 d-flex align-items-center gap-2">
         <select class="form-select" name="Action" style="width:auto;">
             <option value="">Wybierz akcję...</option>
-            <option value="TurnOn">Włącz</option>
-            <option value="TurnOff">Wyłącz</option>
-            <option value="Restart">Restart</option>
+            <option value="@HostActionStrings.TurnOn">Włącz</option>
+            <option value="@HostActionStrings.TurnOff">Wyłącz</option>
+            <option value="@HostActionStrings.Restart">Restart</option>
         </select>
-        <button type="submit" class="btn btn-primary btn-sm">Zastosuj dla zaznaczonych</button>
+
+        <button type="submit" class="btn btn-primary btn-sm">
+            Zastosuj dla zaznaczonych
+        </button>
     </div>
 
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover align-middle">
         <thead>
             <tr>
                 <th><input type="checkbox" id="checkAll" /></th>
@@ -51,67 +57,83 @@
         <tbody>
             @foreach (var host in Model)
             {
-                <tr>
-                    <td><input type="checkbox" name="SelectedIds" value="@host.Id" /></td>
+                bool isBusy =
+                host.LastActionStatus == HostActionStatus.Pending ||
+                host.LastActionStatus == HostActionStatus.Running;
+
+                <tr class="@(isBusy ? "table-secondary" : "")">
+                    <td>
+                        <input type="checkbox"
+                               name="SelectedIds"
+                               value="@host.Id"
+                               disabled="@isBusy" />
+                    </td>
+
                     <td>@host.Name</td>
                     <td>@host.Description</td>
                     <td>@host.IpAddress</td>
                     <td>@host.MacAddress</td>
+
                     <td>
-                        <!-- używamy przycisków z formaction zamiast zagnieżdżonych formularzy -->
-                        <button type="submit"
-                                class="btn btn-sm btn-success"
-                                formaction="@Url.Action("TurnOn", "ManagedHostsList")"
-                                formmethod="post"
-                                name="id"
-                                value="@host.Id">
-                            Włącz
-                        </button>
+                        <!-- ODDZIELNE FORMULARZE dla każdej akcji -->
+                        <form asp-action="TurnOn" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@host.Id" />
+                            <button type="submit"
+                                    class="btn btn-sm btn-success"
+                                    disabled="@isBusy">
+                                Włącz
+                            </button>
+                        </form>
 
-                        <button type="submit"
-                                class="btn btn-sm btn-warning"
-                                formaction="@Url.Action("Restart", "ManagedHostsList")"
-                                formmethod="post"
-                                name="id"
-                                value="@host.Id">
-                            Restart
-                        </button>
+                        <form asp-action="Restart" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@host.Id" />
+                            <button type="submit"
+                                    class="btn btn-sm btn-warning"
+                                    disabled="@isBusy">
+                                Restart
+                            </button>
+                        </form>
 
-                        <button type="submit"
-                                class="btn btn-sm btn-danger"
-                                formaction="@Url.Action("TurnOff", "ManagedHostsList")"
-                                formmethod="post"
-                                name="id"
-                                value="@host.Id">
-                            Wyłącz
-                        </button>
+                        <form asp-action="TurnOff" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@host.Id" />
+                            <button type="submit"
+                                    class="btn btn-sm btn-danger"
+                                    disabled="@isBusy">
+                                Wyłącz
+                            </button>
+                        </form>
+
+                        @if (isBusy)
+                        {
+                            <span class="text-muted small ms-2">(akcja w toku)</span>
+                        }
                     </td>
-                    <td>@host.LastActionType
+
+                    <td>
+                        <strong>@host.LastActionType</strong>
+
                         @switch (host.LastActionStatus)
                         {
                             case HostActionStatus.Pending:
-                                <span class="badge bg-secondary">Pending</span>
-                                ;
+                                <span class="badge bg-secondary ms-1">Pending</span>
                                 break;
                             case HostActionStatus.Running:
-                                <span class="badge bg-info">Running</span>
-                                ;
+                                <span class="badge bg-info ms-1">Running</span>
                                 break;
                             case HostActionStatus.Success:
-                                <span class="badge bg-success">Success</span>
-                                ;
+                                <span class="badge bg-success ms-1">Success</span>
                                 break;
                             case HostActionStatus.Failed:
-                                <span class="badge bg-danger">Failed</span>
-                                ;
+                                <span class="badge bg-danger ms-1">Failed</span>
                                 break;
                             case HostActionStatus.Cancelled:
-                                <span class="badge bg-warning">Cancelled</span>
-                                ;
+                                <span class="badge bg-warning ms-1">Cancelled</span>
                                 break;
                             default:
-                                <span class="badge bg-light text-dark">–</span>
-                                ;
+                                <span class="badge bg-light text-dark ms-1">–</span>
                                 break;
                         }
 
@@ -133,14 +155,21 @@
 
 @section Scripts {
     <script>
-        // Guard dla bezpieczeństwa — element może nie istnieć w DOM
-        var checkAllEl = document.getElementById('checkAll');
-        if (checkAllEl) {
-            checkAllEl.addEventListener('click', function () {
-                var checkboxes = document.querySelectorAll('input[name="SelectedIds"]');
-                checkboxes.forEach(cb => cb.checked = this.checked);
-            });
-        }
-    </script>
+        // Zaznacz / odznacz wszystko
+        document.getElementById('checkAll')?.addEventListener('click', function() {
+            document.querySelectorAll('input[name="SelectedIds"]:not(:disabled)')
+                .forEach(cb => cb.checked = this.checked);
+        });
 
+        // Guard dla batch submit
+        document.getElementById('batchForm')?.addEventListener('submit', function(e) {
+            const action = this.querySelector('select[name="Action"]').value;
+            const checked = this.querySelectorAll('input[name="SelectedIds"]:checked').length;
+
+            if (!action || checked === 0) {
+                e.preventDefault();
+                alert('Wybierz akcję i co najmniej jednego hosta');
+            }
+        });
+    </script>
 }

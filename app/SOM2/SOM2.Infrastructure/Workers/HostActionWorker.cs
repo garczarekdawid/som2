@@ -30,32 +30,38 @@ namespace SOM2.Infrastructure.Workers
                 var repo = scope.ServiceProvider.GetRequiredService<IHostActionRepository>();
                 var executor = scope.ServiceProvider.GetRequiredService<IHostActionExecutor>();
 
-                // pobieramy max 10 naraz
                 var pending = await repo.GetPendingActionsAsync(limit: 10);
 
-                if (pending.Any())
+                foreach (var action in pending)
                 {
-                    // ustawiamy status Running
-                    foreach (var action in pending)
+                    try
                     {
                         action.Status = HostActionStatus.Running;
                         action.StartedAt = DateTime.UtcNow;
                         await repo.UpdateAsync(action);
+
+                        var result = await executor.ExecuteAsync(action, stoppingToken);
+
+                        action.ExitCode = result.ExitCode;
+                        action.Output = CleanString(result.StdOut) + "\n" + CleanString(result.StdErr);
+                        action.Status = result.ExitCode == 0
+                            ? HostActionStatus.Success
+                            : HostActionStatus.Failed;
+                    }
+                    catch (Exception ex)
+                    {
+                        action.Status = HostActionStatus.Failed;
+                        action.Output = $"Execution threw exception: {ex.Message}";
                     }
 
-                    // tworzymy Taski
-                    var tasks = pending.Select(action =>
-                        ExecuteSingleAsync(action, repo, executor, stoppingToken)
-                    );
-
-                    // czekamy aż wszystkie się wykonają
-                    await Task.WhenAll(tasks);
+                    action.FinishedAt = DateTime.UtcNow;
+                    await repo.UpdateAsync(action);
                 }
 
-                // zamiast 5s stałej pauzy można ewentualnie bardziej dynamicznie
                 await Task.Delay(5000, stoppingToken);
             }
         }
+
 
         private async Task ExecuteSingleAsync(
             HostActionExecution action,
