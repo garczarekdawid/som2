@@ -1,6 +1,7 @@
 ---
 - name: Wake hosts via WOL
   hosts: localhost
+  connection: local   # <--- To jest kluczowe!
   gather_facts: no
   vars:
     broadcast_address: 255.255.255.255

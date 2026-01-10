@@ -76,12 +76,53 @@ $@"[all]
 
             try
             {
-                return await RunProcessAsync(psi, ct);
+                var ansibleResult = await RunProcessAsync(psi, ct);
+
+                // SPECJALNA OBSŁUGA DLA REBOOT/POWEROFF
+                if (action.Action == HostActionType.Reboot || action.Action == HostActionType.PowerOff)
+                {
+                    // Dla reboot/poweroff, exit code 2 może oznaczać sukces (SSH connection reset)
+                    if (ansibleResult.ExitCode == 2)
+                    {
+                        // Sprawdź, czy to typowy błąd dla reboot (connection reset)
+                        if (IsRebootConnectionError(ansibleResult.StdErr))
+                        {
+                            // To jest NORMALNE dla reboot - zmieniamy na sukces
+                            ansibleResult.ExitCode = 0;
+                            ansibleResult.StdOut += "\n[INFO] Reboot triggered successfully (SSH connection reset is expected)";
+                        }
+                    }
+                }
+
+                return ansibleResult;
             }
             finally
             {
                 try { if (File.Exists(inventoryPath)) File.Delete(inventoryPath); } catch { }
             }
+        }
+
+        // Sprawdza czy błąd to typowy "connection reset" przy reboot
+        private bool IsRebootConnectionError(string error)
+        {
+            if (string.IsNullOrEmpty(error))
+                return false;
+
+            var rebootErrors = new[]
+            {
+                "Connection reset by peer",
+                "kex_exchange_identification: read: Connection reset by peer",
+                "Broken pipe",
+                "Connection closed"
+            };
+
+            foreach (var rebootError in rebootErrors)
+            {
+                if (error.Contains(rebootError, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
 
         // =========================

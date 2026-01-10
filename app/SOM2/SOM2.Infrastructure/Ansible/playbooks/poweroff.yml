@@ -1,9 +1,26 @@
 ---
-- name: Power off host
+- name: Power off host properly
   hosts: all
   gather_facts: no
+  
   tasks:
-    - name: Shutdown the host
+    - name: Schedule shutdown in 1 minute (gives time for connection to close)
+      ansible.builtin.command: /sbin/shutdown -h +1
+      become: yes
+      become_method: sudo
+      changed_when: false
+      register: shutdown_cmd
+
+    - name: Cancel shutdown if we want immediate (optional)
+      ansible.builtin.command: /sbin/shutdown -c
+      become: yes
+      become_method: sudo
+      when: false  # Wyłączone - użyj jeśli chcesz natychmiastowe wyłączenie
+
+    - name: Perform immediate shutdown (will break connection)
       ansible.builtin.command: /sbin/shutdown -h now
       become: yes
       become_method: sudo
+      async: 10
+      poll: 0
+      ignore_errors: true

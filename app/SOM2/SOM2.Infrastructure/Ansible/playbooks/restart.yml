@@ -4,6 +4,14 @@
   gather_facts: no
   tasks:
     - name: Reboot the host
-      ansible.builtin.command: /sbin/reboot
-      become: yes
-      become_method: sudo
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+      ignore_errors: true  # Ignoruj błędy połączenia
+      register: reboot_result
+
+    - name: Check if reboot was triggered
+      debug:
+        msg: "Reboot triggered successfully, SSH connection may be reset"
+      when: reboot_result is failed and 
+            "'Connection reset' in reboot_result.msg or 
+             'Broken pipe' in reboot_result.msg"
