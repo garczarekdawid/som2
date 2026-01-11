@@ -2,10 +2,14 @@
 - name: Reboot host
   hosts: all
   gather_facts: no
+
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
   tasks:
     - name: Reboot the host
       ansible.builtin.reboot:
-        reboot_timeout: 300
+        reboot_timeout: 60
       ignore_errors: true  # Ignoruj błędy połączenia
       register: reboot_result
 

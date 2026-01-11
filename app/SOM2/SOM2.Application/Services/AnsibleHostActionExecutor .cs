@@ -263,7 +263,12 @@ $@"[all]
                     StandardOutputEncoding = Encoding.UTF8,
                     StandardErrorEncoding = Encoding.UTF8,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    Environment =
+                    {
+                        ["HOME"] = "/var/www/som2",
+                        ["ANSIBLE_REMOTE_TMP"] = "/tmp/.ansible/tmp"
+                    }
                 },
                 _ => throw new NotSupportedException($"Mode {_options.Mode} not supported")
             };

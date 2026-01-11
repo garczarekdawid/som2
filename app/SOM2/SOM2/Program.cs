@@ -66,7 +66,7 @@ namespace SOM2
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+                pattern: "{controller=ManagedHostsList}/{action=Index}/{id?}");
 
             app.Run();
         }

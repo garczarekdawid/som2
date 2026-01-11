@@ -12,7 +12,7 @@
     <div class="alert alert-info">@TempData["Message"]</div>
 }
 
-<!-- Przyciski globalne -->
+<!-- Przyciski globalne (poza tabelą) -->
 <div class="mb-3">
     <form asp-action="TurnOnAll" method="post" class="d-inline">
         @Html.AntiForgeryToken()
@@ -25,7 +25,9 @@
     </form>
 </div>
 
-<!-- Formularz batch (BEZ przycisków akcji) -->
+<!-- =================== -->
+<!-- FORMULARZ BATCH -->
+<!-- =================== -->
 <form asp-action="BatchAction" method="post" id="batchForm">
     @Html.AntiForgeryToken()
 
@@ -63,10 +65,12 @@
 
                 <tr class="@(isBusy ? "table-secondary" : "")">
                     <td>
+                        <!-- Checkbox tylko dla batchForm -->
                         <input type="checkbox"
                                name="SelectedIds"
                                value="@host.Id"
-                               disabled="@isBusy" />
+                               disabled="@isBusy"
+                               form="batchForm" />
                     </td>
 
                     <td>@host.Name</td>
@@ -75,36 +79,32 @@
                     <td>@host.MacAddress</td>
 
                     <td>
-                        <!-- ODDZIELNE FORMULARZE dla każdej akcji -->
-                        <form asp-action="TurnOn" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@host.Id" />
-                            <button type="submit"
-                                    class="btn btn-sm btn-success"
-                                    disabled="@isBusy">
-                                Włącz
-                            </button>
-                        </form>
+                        <!-- PRZYCISKI HOSTA - OSOBNE FORMUARZE (poza tabelą) -->
+                        <!-- Przenosimy je do JavaScript lub użyjemy POST przez fetch -->
 
-                        <form asp-action="Restart" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@host.Id" />
-                            <button type="submit"
-                                    class="btn btn-sm btn-warning"
-                                    disabled="@isBusy">
-                                Restart
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="btn btn-sm btn-success single-action-btn"
+                                data-action="TurnOn"
+                                data-host-id="@host.Id"
+                                disabled="@isBusy">
+                            Włącz
+                        </button>
 
-                        <form asp-action="TurnOff" method="post" class="d-inline">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@host.Id" />
-                            <button type="submit"
-                                    class="btn btn-sm btn-danger"
-                                    disabled="@isBusy">
-                                Wyłącz
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="btn btn-sm btn-warning single-action-btn"
+                                data-action="Restart"
+                                data-host-id="@host.Id"
+                                disabled="@isBusy">
+                            Restart
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-danger single-action-btn"
+                                data-action="TurnOff"
+                                data-host-id="@host.Id"
+                                disabled="@isBusy">
+                            Wyłącz
+                        </button>
 
                         @if (isBusy)
                         {
@@ -155,13 +155,13 @@
 
 @section Scripts {
     <script>
-        // Zaznacz / odznacz wszystko
+        // Zaznacz / odznacz wszystkie checkboxy w batchForm
         document.getElementById('checkAll')?.addEventListener('click', function() {
-            document.querySelectorAll('input[name="SelectedIds"]:not(:disabled)')
+            document.querySelectorAll('#batchForm input[name="SelectedIds"]:not(:disabled)')
                 .forEach(cb => cb.checked = this.checked);
         });
 
-        // Guard dla batch submit
+        // Walidacja tylko dla batchForm
         document.getElementById('batchForm')?.addEventListener('submit', function(e) {
             const action = this.querySelector('select[name="Action"]').value;
             const checked = this.querySelectorAll('input[name="SelectedIds"]:checked').length;
@@ -170,6 +170,69 @@
                 e.preventDefault();
                 alert('Wybierz akcję i co najmniej jednego hosta');
             }
+        });
+
+        // Obsługa przycisków pojedynczych akcji (AJAX)
+        document.querySelectorAll('.single-action-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const hostId = this.dataset.hostId;
+                const action = this.dataset.action;
+                const button = this;
+
+                // Disable button during request
+                button.disabled = true;
+                const originalText = button.textContent;
+                button.textContent = 'Wysyłanie...';
+
+                try {
+                    // Pobierz token anty-CSRF
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    // Zbuduj URL zgodnie z konwencją ASP.NET Core
+                    const url = `@Url.Action("TurnOn", "ManagedHostsList")`.replace('TurnOn', action);
+
+                    // Przygotuj dane do wysłania
+                    const formData = new FormData();
+                    formData.append('id', hostId);
+
+                    // Albo użyj URLSearchParams dla application/x-www-form-urlencoded
+                    const params = new URLSearchParams();
+                    params.append('id', hostId);
+                    params.append('__RequestVerificationToken', token);
+
+                    // Wyślij żądanie POST
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': token
+                        },
+                        body: params
+                    });
+
+                    if (response.ok) {
+                        // Sprawdź, czy odpowiedź to przekierowanie
+                        if (response.redirected) {
+                            // Jeśli tak, przeładuj stronę
+                            window.location.href = response.url;
+                        } else {
+                            // W przeciwnym razie przeładuj stronę
+                            window.location.reload();
+                        }
+                    } else {
+                        // Spróbuj wyciągnąć więcej informacji o błędzie
+                        const errorText = await response.text();
+                        console.error('Błąd odpowiedzi:', response.status, errorText);
+                        alert(`Wystąpił błąd (${response.status}): ${response.statusText}`);
+                        button.disabled = false;
+                        button.textContent = originalText;
+                    }
+                } catch (error) {
+                    console.error('Błąd połączenia:', error);
+                    alert('Błąd połączenia: ' + error.message);
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            });
         });
     </script>
 }

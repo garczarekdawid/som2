@@ -3,6 +3,9 @@
   hosts: all
   gather_facts: no
   
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
   tasks:
     - name: Schedule shutdown in 1 minute (gives time for connection to close)
       ansible.builtin.command: /sbin/shutdown -h +1
