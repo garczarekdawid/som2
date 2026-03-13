@@ -32,18 +32,49 @@ namespace SOM2.Infrastructure.Workers
 
                 var pending = await repo.GetPendingActionsAsync(limit: 10);
 
-                foreach (var action in pending)
+                //foreach (var action in pending)
+                //{
+                //    try
+                //    {
+                //        action.Status = HostActionStatus.Running;
+                //        action.StartedAt = DateTime.UtcNow;
+                //        await repo.UpdateAsync(action);
+
+                //        var result = await executor.ExecuteAsync(action, stoppingToken);
+
+                //        action.ExitCode = result.ExitCode;
+                //        action.Output = CleanString(result.StdOut) + "\n" + CleanString(result.StdErr);
+                //        action.Status = result.ExitCode == 0
+                //            ? HostActionStatus.Success
+                //            : HostActionStatus.Failed;
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        action.Status = HostActionStatus.Failed;
+                //        action.Output = $"Execution threw exception: {ex.Message}";
+                //    }
+
+                //    action.FinishedAt = DateTime.UtcNow;
+                //    await repo.UpdateAsync(action);
+                //}
+
+                await Task.WhenAll(pending.Select(async action =>
                 {
                     try
                     {
                         action.Status = HostActionStatus.Running;
                         action.StartedAt = DateTime.UtcNow;
+
                         await repo.UpdateAsync(action);
 
                         var result = await executor.ExecuteAsync(action, stoppingToken);
 
                         action.ExitCode = result.ExitCode;
-                        action.Output = CleanString(result.StdOut) + "\n" + CleanString(result.StdErr);
+                        action.Output =
+                            CleanString(result.StdOut) +
+                            "\n" +
+                            CleanString(result.StdErr);
+
                         action.Status = result.ExitCode == 0
                             ? HostActionStatus.Success
                             : HostActionStatus.Failed;
@@ -53,10 +84,12 @@ namespace SOM2.Infrastructure.Workers
                         action.Status = HostActionStatus.Failed;
                         action.Output = $"Execution threw exception: {ex.Message}";
                     }
-
-                    action.FinishedAt = DateTime.UtcNow;
-                    await repo.UpdateAsync(action);
-                }
+                    finally
+                    {
+                        action.FinishedAt = DateTime.UtcNow;
+                        await repo.UpdateAsync(action);
+                    }
+                }));
 
                 await Task.Delay(5000, stoppingToken);
             }

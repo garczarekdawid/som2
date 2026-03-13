@@ -63,7 +63,7 @@ namespace SOM2.Application.Services
 
             string inventoryContent =
 $@"[all]
-{host.IpAddress} ansible_user={host.SshUser} ansible_ssh_pass={host.SshPassword}{legacyArgs} ansible_become=true ansible_become_pass={host.SshPassword}";
+{host.IpAddress} ansible_user={host.SshUser} ansible_ssh_pass={EscapeAnsibleValue(host.SshPassword)}{legacyArgs} ansible_become=true ansible_become_pass={EscapeAnsibleValue(host.SshPassword)}";
 
             await File.WriteAllTextAsync(inventoryPath, inventoryContent, ct);
 
@@ -282,6 +282,20 @@ $@"[all]
             var drive = char.ToLower(fullPath[0]);
             var path = fullPath.Substring(2).Replace('\\', '/');
             return $"/mnt/{drive}{path}";
+        }
+
+        private static string EscapeAnsibleValue(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("'", "\\'")
+                .Replace("$", "\\$")
+                .Replace("!", "\\!")
+                .Replace(" ", "\\ ");
         }
     }
 }
